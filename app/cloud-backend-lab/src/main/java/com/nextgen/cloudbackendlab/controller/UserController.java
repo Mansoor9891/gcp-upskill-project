@@ -1,7 +1,7 @@
 package com.nextgen.cloudbackendlab.controller;
 
 import com.nextgen.cloudbackendlab.entity.User;
-import com.nextgen.cloudbackendlab.repository.UserRepository;
+import com.nextgen.cloudbackendlab.service.UserService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -10,39 +10,35 @@ import java.util.List;
 @RequestMapping("/users")
 public class UserController {
 
-    private final UserRepository userRepository;
+    private final UserService userService;
 
-    public UserController(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
     @PostMapping
     public User createUser(@RequestBody User user) {
-        return userRepository.save(user);
+        return userService.createUser(user);
     }
 
     @GetMapping
     public List<User> getAllUsers() {
-        return userRepository.findAll();
+        return userService.getAllUsers();
     }
 
     @GetMapping("/{id}")
-    public User getById(@PathVariable Long id) {
-        return userRepository.findById(id).orElseThrow();
-    }
-
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        userRepository.deleteById(id);
+    public User getUserById(@PathVariable Long id) {
+        return userService.getUserById(id);
     }
 
     @PutMapping("/{id}")
-    public User update(@PathVariable Long id, @RequestBody User user) {
-        User existing = userRepository.findById(id).orElseThrow();
+    public User updateUser(@PathVariable Long id, @RequestBody User user) {
+        return userService.updateUser(id, user);
+    }
 
-        existing.setName(user.getName());
-        existing.setEmail(user.getEmail());
-
-        return userRepository.save(existing);
+    @DeleteMapping("/{id}")
+    public String deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return "User deleted successfully";
     }
 }
