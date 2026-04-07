@@ -1,8 +1,7 @@
 package com.nextgen.cloudbackendlab.service;
 
-
 import com.nextgen.cloudbackendlab.entity.User;
-import com.nextgen.cloudbackendlab.event.UserCreatedEvent;
+import com.nextgen.cloudbackendlab.event.UserEvent;
 import com.nextgen.cloudbackendlab.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +11,6 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
-
     private final UserEventPublisher userEventPublisher;
 
     public UserService(UserRepository userRepository,
@@ -24,7 +22,8 @@ public class UserService {
     public User createUser(User user) {
         User savedUser = userRepository.save(user);
 
-        UserCreatedEvent event = new UserCreatedEvent(
+        UserEvent event = new UserEvent(
+                "USER_CREATED",
                 savedUser.getId(),
                 savedUser.getName(),
                 savedUser.getEmail()
@@ -34,8 +33,6 @@ public class UserService {
 
         return savedUser;
     }
-
-
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
@@ -50,7 +47,19 @@ public class UserService {
         User existingUser = getUserById(id);
         existingUser.setName(updatedUser.getName());
         existingUser.setEmail(updatedUser.getEmail());
-        return userRepository.save(existingUser);
+
+        User savedUser = userRepository.save(existingUser);
+
+        UserEvent event = new UserEvent(
+                "USER_UPDATED",
+                savedUser.getId(),
+                savedUser.getName(),
+                savedUser.getEmail()
+        );
+
+        userEventPublisher.publishUserUpdated(event);
+
+        return savedUser;
     }
 
     public void deleteUser(Long id) {
