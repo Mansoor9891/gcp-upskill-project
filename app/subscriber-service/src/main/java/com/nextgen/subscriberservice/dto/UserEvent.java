@@ -4,7 +4,10 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public class UserCreatedEvent {
+public class UserEvent {
+
+    @NotBlank(message = "eventType must not be blank")
+    private String eventType;
 
     @NotNull(message = "userId must not be null")
     private Long userId;
@@ -16,13 +19,22 @@ public class UserCreatedEvent {
     @Email(message = "email must be valid")
     private String email;
 
-    public UserCreatedEvent() {
+    public UserEvent() {
     }
 
-    public UserCreatedEvent(Long userId, String name, String email) {
+    public UserEvent(String eventType, Long userId, String name, String email) {
+        this.eventType = eventType;
         this.userId = userId;
         this.name = name;
         this.email = email;
+    }
+
+    public String getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
     }
 
     public Long getUserId() {
@@ -51,8 +63,9 @@ public class UserCreatedEvent {
 
     @Override
     public String toString() {
-        return "UserCreatedEvent{" +
-                "userId=" + userId +
+        return "UserEvent{" +
+                "eventType='" + eventType + '\'' +
+                ", userId=" + userId +
                 ", name='" + name + '\'' +
                 ", email='" + email + '\'' +
                 '}';

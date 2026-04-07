@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.cloud.spring.pubsub.core.PubSubTemplate;
 import com.google.cloud.spring.pubsub.support.BasicAcknowledgeablePubsubMessage;
-import com.nextgen.subscriberservice.dto.UserCreatedEvent;
+import com.nextgen.subscriberservice.dto.UserEvent;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.validation.ConstraintViolation;
@@ -25,6 +25,7 @@ public class PubSubSubscriber {
     private final PubSubTemplate pubSubTemplate;
     private final ObjectMapper objectMapper;
     private final Validator validator;
+    private final EventDispatcher eventDispatcher;
 
     @Value("${subscriber.subscription}")
     private String subscriptionName;
@@ -33,10 +34,12 @@ public class PubSubSubscriber {
 
     public PubSubSubscriber(PubSubTemplate pubSubTemplate,
                             ObjectMapper objectMapper,
-                            Validator validator) {
+                            Validator validator,
+                            EventDispatcher eventDispatcher) {
         this.pubSubTemplate = pubSubTemplate;
         this.objectMapper = objectMapper;
         this.validator = validator;
+        this.eventDispatcher = eventDispatcher;
     }
 
     @PostConstruct
@@ -55,11 +58,11 @@ public class PubSubSubscriber {
 
             log.info("Received raw messageId={} payload={}", messageId, payload);
 
-            UserCreatedEvent event = objectMapper.readValue(payload, UserCreatedEvent.class);
+            UserEvent event = objectMapper.readValue(payload, UserEvent.class);
 
             validateEvent(event);
 
-            processUserCreatedEvent(event);
+            eventDispatcher.dispatch(event);
 
             message.ack();
             log.info("Acknowledged messageId={}", messageId);
@@ -70,8 +73,8 @@ public class PubSubSubscriber {
         }
     }
 
-    private void validateEvent(UserCreatedEvent event) {
-        Set<ConstraintViolation<UserCreatedEvent>> violations = validator.validate(event);
+    private void validateEvent(UserEvent event) {
+        Set<ConstraintViolation<UserEvent>> violations = validator.validate(event);
 
         if (!violations.isEmpty()) {
             String errorMessage = violations.stream()
@@ -80,13 +83,6 @@ public class PubSubSubscriber {
 
             throw new IllegalArgumentException("Event validation failed: " + errorMessage);
         }
-    }
-
-    private void processUserCreatedEvent(UserCreatedEvent event) {
-        log.info("Processing USER_CREATED event: userId={}, name={}, email={}",
-                event.getUserId(), event.getName(), event.getEmail());
-
-        log.info("User created event processed successfully for email={}", event.getEmail());
     }
 
     @PreDestroy
