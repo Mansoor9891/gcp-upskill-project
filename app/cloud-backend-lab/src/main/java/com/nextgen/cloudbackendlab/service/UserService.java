@@ -2,6 +2,7 @@ package com.nextgen.cloudbackendlab.service;
 
 
 import com.nextgen.cloudbackendlab.entity.User;
+import com.nextgen.cloudbackendlab.event.UserCreatedEvent;
 import com.nextgen.cloudbackendlab.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
@@ -12,13 +13,29 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    public UserService(UserRepository userRepository) {
+    private final UserEventPublisher userEventPublisher;
+
+    public UserService(UserRepository userRepository,
+                       UserEventPublisher userEventPublisher) {
         this.userRepository = userRepository;
+        this.userEventPublisher = userEventPublisher;
     }
 
     public User createUser(User user) {
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        UserCreatedEvent event = new UserCreatedEvent(
+                savedUser.getId(),
+                savedUser.getName(),
+                savedUser.getEmail()
+        );
+
+        userEventPublisher.publishUserCreated(event);
+
+        return savedUser;
     }
+
+
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
